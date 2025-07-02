@@ -156,7 +156,7 @@ export const searchAds = async (searchTerm = '', filters: SearchFilters = {}, pa
         risk_level,
         violation_types_detected,
         violation_detected_date,
-        snapshot_url,
+        facebook_ads_library_url,
         primary_image_url,
         is_flagged,
         linked_broker_npn,

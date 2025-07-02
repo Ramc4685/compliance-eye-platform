@@ -27,7 +27,7 @@ interface Ad {
   risk_level: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'CLEAR'
   violation_types_detected: string | null
   is_flagged: boolean
-  snapshot_url: string
+  facebook_ads_library_url: string
   violation_detected_date: string | null
   primary_image_url: string
   created_at: string

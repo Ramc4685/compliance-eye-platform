@@ -15,7 +15,7 @@ interface Ad {
   risk_level: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'CLEAR'
   violation_types_detected: string | null
   is_flagged: boolean
-  snapshot_url: string
+  facebook_ads_library_url: string
   violation_detected_date: string | null
   primary_image_url: string
   created_at: string
@@ -51,9 +51,9 @@ export function AdsTable({ ads, loading, onAdSelect }: AdsTableProps) {
     return 0
   })
 
-  const openFacebookAd = (snapshotUrl: string, e: React.MouseEvent) => {
+  const openFacebookAd = (facebookUrl: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    window.open(snapshotUrl, '_blank', 'noopener,noreferrer')
+    window.open(facebookUrl, '_blank', 'noopener,noreferrer')
   }
 
   const formatDate = (dateString: string | null) => {
@@ -217,7 +217,7 @@ export function AdsTable({ ads, loading, onAdSelect }: AdsTableProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={(e) => openFacebookAd(ad.snapshot_url, e)}
+                          onClick={(e) => openFacebookAd(ad.facebook_ads_library_url, e)}
                           className="h-8 px-2"
                         >
                           <ExternalLink className="h-4 w-4" />
