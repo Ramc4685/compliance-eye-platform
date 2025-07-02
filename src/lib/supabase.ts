@@ -1,11 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
-
-// Mock configuration for demo purposes
-// In production, these would come from environment variables
-const supabaseUrl = 'https://demo.supabase.co'
-const supabaseKey = 'demo-key'
-
-export const supabase = createClient(supabaseUrl, supabaseKey)
+import { supabase } from '@/integrations/supabase/client'
 
 // Mock data for demonstration
 export const mockAds = [
@@ -110,15 +103,36 @@ export const mockBrokers = [
   { npn: "44444444", broker_name: "Angela Davis", agency_name: "Family Health Solutions", email: "angela@familyhealth.com", total_violations: 1, compliance_score: 1, registration_status: "Active" }
 ]
 
-// Mock API functions
+// Real Supabase API functions
 export const getDashboardMetrics = async () => {
-  await new Promise(resolve => setTimeout(resolve, 500)) // Simulate network delay
-  
-  return {
-    totalAds: mockAds.length,
-    flaggedCount: mockAds.filter(ad => ad.is_flagged).length,
-    avgScore: Math.round((mockAds.reduce((sum, ad) => sum + ad.compliance_score, 0) / mockAds.length) * 10) / 10,
-    criticalCount: mockAds.filter(ad => ad.risk_level === 'CRITICAL').length
+  try {
+    const { data: ads, error } = await supabase
+      .from('ads')
+      .select('compliance_score, is_flagged, risk_level')
+    
+    if (error) throw error
+    
+    const totalAds = ads?.length || 0
+    const flaggedCount = ads?.filter(ad => ad.is_flagged).length || 0
+    const avgScore = totalAds > 0 
+      ? Math.round((ads.reduce((sum, ad) => sum + (ad.compliance_score || 0), 0) / totalAds) * 10) / 10
+      : 0
+    const criticalCount = ads?.filter(ad => ad.risk_level === 'CRITICAL').length || 0
+    
+    return {
+      totalAds,
+      flaggedCount,
+      avgScore,
+      criticalCount
+    }
+  } catch (error) {
+    console.error('Error fetching dashboard metrics:', error)
+    return {
+      totalAds: 0,
+      flaggedCount: 0,
+      avgScore: 0,
+      criticalCount: 0
+    }
   }
 }
 
@@ -130,128 +144,185 @@ interface SearchFilters {
 }
 
 export const searchAds = async (searchTerm = '', filters: SearchFilters = {}, page = 0, limit = 50) => {
-  await new Promise(resolve => setTimeout(resolve, 300)) // Simulate network delay
-  
-  let filteredAds = [...mockAds]
-  
-  // Text search
-  if (searchTerm) {
-    const term = searchTerm.toLowerCase()
-    filteredAds = filteredAds.filter(ad =>
-      ad.page_name.toLowerCase().includes(term) ||
-      ad.ad_title.toLowerCase().includes(term) ||
-      ad.violation_types_detected?.toLowerCase().includes(term)
-    )
-  }
-  
-  // Risk level filter
-  if (filters.riskLevels?.length > 0) {
-    filteredAds = filteredAds.filter(ad => filters.riskLevels.includes(ad.risk_level))
-  }
-  
-  // Score range filter
-  if (filters.minScore !== undefined) {
-    filteredAds = filteredAds.filter(ad => ad.compliance_score >= filters.minScore)
-  }
-  if (filters.maxScore !== undefined) {
-    filteredAds = filteredAds.filter(ad => ad.compliance_score <= filters.maxScore)
-  }
-  
-  // Only flagged filter
-  if (filters.flaggedOnly) {
-    filteredAds = filteredAds.filter(ad => ad.is_flagged)
-  }
-  
-  // Sort by compliance score (highest first)
-  filteredAds.sort((a, b) => b.compliance_score - a.compliance_score)
-  
-  const startIndex = page * limit
-  const endIndex = startIndex + limit
-  
-  return {
-    data: filteredAds.slice(startIndex, endIndex),
-    totalCount: filteredAds.length
+  try {
+    let query = supabase
+      .from('ads')
+      .select(`
+        ad_archive_id,
+        page_name,
+        ad_title,
+        ad_body_text,
+        compliance_score,
+        risk_level,
+        violation_types_detected,
+        violation_detected_date,
+        snapshot_url,
+        primary_image_url,
+        is_flagged,
+        linked_broker_npn,
+        created_at:data_collection_date
+      `)
+    
+    // Text search across key fields
+    if (searchTerm) {
+      query = query.or(`
+        page_name.ilike.%${searchTerm}%,
+        ad_title.ilike.%${searchTerm}%,
+        violation_types_detected.ilike.%${searchTerm}%
+      `)
+    }
+    
+    // Risk level filter
+    if (filters.riskLevels?.length > 0) {
+      query = query.in('risk_level', filters.riskLevels)
+    }
+    
+    // Score range filter
+    if (filters.minScore !== undefined) {
+      query = query.gte('compliance_score', filters.minScore)
+    }
+    if (filters.maxScore !== undefined) {
+      query = query.lte('compliance_score', filters.maxScore)
+    }
+    
+    // Only flagged ads filter
+    if (filters.flaggedOnly) {
+      query = query.eq('is_flagged', true)
+    }
+    
+    const { data, error, count } = await query
+      .order('compliance_score', { ascending: false })
+      .range(page * limit, (page + 1) * limit - 1)
+    
+    if (error) throw error
+    
+    return {
+      data: data || [],
+      totalCount: count || 0
+    }
+  } catch (error) {
+    console.error('Error searching ads:', error)
+    return {
+      data: [],
+      totalCount: 0
+    }
   }
 }
 
 export const getAdDetails = async (adArchiveId: string) => {
-  await new Promise(resolve => setTimeout(resolve, 200))
-  
-  const ad = mockAds.find(ad => ad.ad_archive_id === adArchiveId)
-  if (!ad) {
+  try {
+    const { data, error } = await supabase
+      .from('ads')
+      .select(`
+        *,
+        brokers!linked_broker_npn(
+          npn,
+          broker_name,
+          agency_name,
+          email,
+          registration_status
+        )
+      `)
+      .eq('ad_archive_id', adArchiveId)
+      .single()
+    
+    if (error) throw error
+    
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching ad details:', error)
     return { data: null, error: 'Ad not found' }
-  }
-  
-  const broker = mockBrokers.find(broker => broker.npn === ad.linked_broker_npn)
-  
-  return {
-    data: {
-      ...ad,
-      broker
-    },
-    error: null
   }
 }
 
 export const getScoreDistribution = async () => {
-  await new Promise(resolve => setTimeout(resolve, 300))
-  
-  const distribution = Array.from({length: 11}, (_, i) => ({
-    score: i,
-    count: mockAds.filter(ad => ad.compliance_score === i).length,
-    label: i === 0 ? 'Clean' : `${i} violation${i > 1 ? 's' : ''}`
-  }))
-  
-  return distribution.filter(item => item.count > 0)
+  try {
+    const { data: ads, error } = await supabase
+      .from('ads')
+      .select('compliance_score')
+    
+    if (error) throw error
+    
+    const distribution = Array.from({length: 11}, (_, i) => ({
+      score: i,
+      count: ads?.filter(ad => (ad.compliance_score || 0) === i).length || 0
+    }))
+    
+    return distribution.filter(item => item.count > 0)
+  } catch (error) {
+    console.error('Error fetching score distribution:', error)
+    return []
+  }
 }
 
 export const getViolationBreakdown = async () => {
-  await new Promise(resolve => setTimeout(resolve, 300))
-  
-  const violations: Record<string, number> = {}
-  
-  mockAds.forEach(ad => {
-    if (ad.violation_types_detected) {
-      ad.violation_types_detected.split(', ').forEach(violation => {
-        violations[violation] = (violations[violation] || 0) + 1
-      })
-    }
-  })
-  
-  return Object.entries(violations)
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 8)
+  try {
+    const { data: ads, error } = await supabase
+      .from('ads')
+      .select('violation_types_detected')
+      .not('violation_types_detected', 'is', null)
+    
+    if (error) throw error
+    
+    const violations: Record<string, number> = {}
+    
+    ads?.forEach(ad => {
+      if (ad.violation_types_detected) {
+        ad.violation_types_detected.split(', ').forEach(violation => {
+          violations[violation] = (violations[violation] || 0) + 1
+        })
+      }
+    })
+    
+    return Object.entries(violations)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+  } catch (error) {
+    console.error('Error fetching violation breakdown:', error)
+    return []
+  }
 }
 
 export const getRiskTrends = async (days = 7) => {
-  await new Promise(resolve => setTimeout(resolve, 300))
-  
-  const trends: Record<string, Record<string, number>> = {}
-  
-  // Generate data for the last 7 days
-  for (let i = days - 1; i >= 0; i--) {
-    const date = new Date()
-    date.setDate(date.getDate() - i)
-    const dateStr = date.toISOString().split('T')[0]
-    trends[dateStr] = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, CLEAR: 0 }
-  }
-  
-  // Distribute mock ads across recent dates
-  mockAds.forEach((ad, index) => {
-    const dateIndex = index % days
-    const date = new Date()
-    date.setDate(date.getDate() - dateIndex)
-    const dateStr = date.toISOString().split('T')[0]
+  try {
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
     
-    if (trends[dateStr]) {
-      trends[dateStr][ad.risk_level]++
+    const { data: ads, error } = await supabase
+      .from('ads')
+      .select('violation_detected_date, risk_level')
+      .gte('violation_detected_date', startDate.toISOString())
+      .order('violation_detected_date')
+    
+    if (error) throw error
+    
+    // Group by date and risk level
+    const trends: Record<string, Record<string, number>> = {}
+    
+    // Initialize all dates
+    for (let i = 0; i < days; i++) {
+      const date = new Date()
+      date.setDate(date.getDate() - (days - 1 - i))
+      const dateStr = date.toISOString().split('T')[0]
+      trends[dateStr] = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, CLEAR: 0 }
     }
-  })
-  
-  return Object.entries(trends).map(([date, counts]) => ({
-    date,
-    ...counts,
-    total: Object.values(counts).reduce((sum, count) => sum + count, 0)
-  }))
+    
+    ads?.forEach(ad => {
+      if (ad.violation_detected_date && ad.risk_level) {
+        const date = new Date(ad.violation_detected_date).toISOString().split('T')[0]
+        if (trends[date]) {
+          trends[date][ad.risk_level as keyof typeof trends[string]]++
+        }
+      }
+    })
+    
+    return Object.entries(trends).map(([date, counts]) => ({
+      date,
+      ...counts
+    }))
+  } catch (error) {
+    console.error('Error fetching risk trends:', error)
+    return []
+  }
 }
