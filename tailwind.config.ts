@@ -26,7 +26,8 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					hover: 'hsl(var(--primary-hover))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -51,6 +52,27 @@ export default {
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
+				},
+				/* Risk level compliance colors */
+				critical: {
+					DEFAULT: 'hsl(var(--critical))',
+					foreground: 'hsl(var(--critical-foreground))'
+				},
+				high: {
+					DEFAULT: 'hsl(var(--high))',
+					foreground: 'hsl(var(--high-foreground))'
+				},
+				medium: {
+					DEFAULT: 'hsl(var(--medium))',
+					foreground: 'hsl(var(--medium-foreground))'
+				},
+				low: {
+					DEFAULT: 'hsl(var(--low))',
+					foreground: 'hsl(var(--low-foreground))'
+				},
+				clear: {
+					DEFAULT: 'hsl(var(--clear))',
+					foreground: 'hsl(var(--clear-foreground))'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
