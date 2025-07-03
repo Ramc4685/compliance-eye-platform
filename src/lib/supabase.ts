@@ -143,7 +143,7 @@ interface SearchFilters {
   flaggedOnly?: boolean
 }
 
-export const searchAds = async (searchTerm = '', filters: SearchFilters = {}, page = 0, limit = 50) => {
+export const searchAds = async (searchTerm = '', filters: SearchFilters = {}, page = 0, limit = 1000) => {
   try {
     let query = supabase
       .from('ads')
@@ -160,7 +160,8 @@ export const searchAds = async (searchTerm = '', filters: SearchFilters = {}, pa
         primary_image_url,
         is_flagged,
         linked_broker_npn,
-        created_at:data_collection_date
+        data_collection_date,
+        last_updated
       `)
     
     // Text search across key fields
