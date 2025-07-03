@@ -2,8 +2,9 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RiskBadge } from "./RiskBadge"
-import { ExternalLink, Eye, Calendar, AlertTriangle } from "lucide-react"
+import { ExternalLink, Eye, Calendar, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   Popover,
@@ -37,9 +38,14 @@ interface AdsTableProps {
   ads: Ad[]
   loading: boolean
   onAdSelect: (adId: string) => void
+  totalCount: number
+  currentPage: number
+  pageSize: number
+  onPageChange: (page: number) => void
+  onPageSizeChange: (size: number) => void
 }
 
-export function AdsTable({ ads, loading, onAdSelect }: AdsTableProps) {
+export function AdsTable({ ads, loading, onAdSelect, totalCount, currentPage, pageSize, onPageChange, onPageSizeChange }: AdsTableProps) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Ad
     direction: 'asc' | 'desc'
@@ -110,7 +116,7 @@ export function AdsTable({ ads, loading, onAdSelect }: AdsTableProps) {
           <AlertTriangle className="h-5 w-5" />
           Compliance Monitoring Results
           <Badge variant="secondary" className="ml-auto">
-            {ads.length} ads found
+            {totalCount.toLocaleString()} ads found
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -272,6 +278,51 @@ export function AdsTable({ ads, loading, onAdSelect }: AdsTableProps) {
               No ads found matching your criteria
             </div> 
           )}
+          
+          {/* Pagination */}
+          <div className="flex items-center justify-between px-4 py-3 border-t">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Show</span>
+              <Select value={pageSize.toString()} onValueChange={(value) => onPageSizeChange(Number(value))}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-sm text-muted-foreground">per page</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                Showing {currentPage * pageSize + 1} to {Math.min((currentPage + 1) * pageSize, totalCount)} of {totalCount.toLocaleString()} results
+              </span>
+              
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange(currentPage - 1)}
+                  disabled={currentPage === 0}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange(currentPage + 1)}
+                  disabled={(currentPage + 1) * pageSize >= totalCount}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

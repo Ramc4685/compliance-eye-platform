@@ -48,6 +48,9 @@ const Index = () => {
     criticalCount: 0
   })
   const [ads, setAds] = useState<Ad[]>([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [pageSize, setPageSize] = useState(50)
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState({
     riskLevels: [],
@@ -68,7 +71,7 @@ const Index = () => {
   // Search and filter ads
   useEffect(() => {
     searchAdsData()
-  }, [searchTerm, filters])
+  }, [searchTerm, filters, currentPage, pageSize])
 
   const loadDashboardData = async () => {
     try {
@@ -84,8 +87,9 @@ const Index = () => {
   const searchAdsData = async () => {
     setSearchLoading(true)
     try {
-      const { data } = await searchAds(searchTerm, filters)
+      const { data, totalCount: count } = await searchAds(searchTerm, filters, currentPage, pageSize)
       setAds(data as Ad[])
+      setTotalCount(count)
     } catch (error) {
       console.error('Failed to search ads:', error)
     } finally {
@@ -160,7 +164,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricsCard
               title="Total Ads Monitored"
-              value={loading ? "..." : metrics.totalAds.toLocaleString()}
+              value={loading ? "..." : totalCount.toLocaleString()}
               description="Facebook health insurance ads"
               icon={Activity}
               variant="default"
@@ -225,6 +229,14 @@ const Index = () => {
                   ads={ads}
                   loading={searchLoading}
                   onAdSelect={handleAdSelect}
+                  totalCount={totalCount}
+                  currentPage={currentPage}
+                  pageSize={pageSize}
+                  onPageChange={(page) => setCurrentPage(page)}
+                  onPageSizeChange={(size) => {
+                    setPageSize(size)
+                    setCurrentPage(0)
+                  }}
                 />
               </div>
             </div>
