@@ -70,13 +70,17 @@ export function AdsTable({ ads, loading, onAdSelect }: AdsTableProps) {
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
-  const formatDate = (dateString: string | null) => {
+  const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A'
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      })
+    } catch {
+      return 'Invalid Date'
+    }
   }
 
   const getViolationCount = (violations: string | null) => {
