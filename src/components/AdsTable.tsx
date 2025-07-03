@@ -5,19 +5,31 @@ import { Badge } from "@/components/ui/badge"
 import { RiskBadge } from "./RiskBadge"
 import { ExternalLink, Eye, Calendar, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 interface Ad {
   ad_archive_id: string
   page_name: string
   ad_title: string
   ad_body_text: string
+  ad_caption?: string
+  cta_text?: string
   compliance_score: number
   risk_level: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'CLEAR'
   violation_types_detected: string | null
   is_flagged: boolean
-  facebook_ads_library_url: string
+  facebook_ads_library_url?: string
+  page_profile_uri?: string
+  video_hd_url?: string
+  video_preview_image_url?: string
   violation_detected_date: string | null
-  primary_image_url: string
+  data_collection_date?: string
+  primary_image_url?: string
+  search_term_used?: string
   created_at: string
 }
 
@@ -51,9 +63,11 @@ export function AdsTable({ ads, loading, onAdSelect }: AdsTableProps) {
     return 0
   })
 
-  const openFacebookAd = (facebookUrl: string, e: React.MouseEvent) => {
+  const openFacebookAd = (adId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    window.open(facebookUrl, '_blank', 'noopener,noreferrer')
+    // Always use the direct ad ID link for consistent behavior
+    const url = `https://www.facebook.com/ads/library/?id=${adId}`
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   const formatDate = (dateString: string | null) => {
@@ -122,19 +136,11 @@ export function AdsTable({ ads, loading, onAdSelect }: AdsTableProps) {
                   <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
                     Violations
                   </th>
-                  <th 
-                    className="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:text-foreground"
-                    onClick={() => handleSort('violation_detected_date')}
-                  >
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      Detected
-                    </div>
-                    {sortConfig.key === 'violation_detected_date' && (
-                      <span className="ml-1">
-                        {sortConfig.direction === 'desc' ? '↓' : '↑'}
-                      </span>
-                    )}
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    Detection Date
+                  </th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    Collection Date
                   </th>
                   <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground">
                     Actions
@@ -161,7 +167,22 @@ export function AdsTable({ ads, loading, onAdSelect }: AdsTableProps) {
                           />
                         )}
                         <div>
-                          <div className="font-medium">{ad.page_name}</div>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <div className="font-medium cursor-pointer hover:underline">{ad.page_name}</div>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-2" align="start">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="flex items-center gap-2 w-full justify-start"
+                                onClick={(e) => openFacebookAd(ad.ad_archive_id, e)}
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                                View on Facebook
+                              </Button>
+                            </PopoverContent>
+                          </Popover>
                           <div className="text-xs text-muted-foreground">
                             ID: {ad.ad_archive_id.slice(-8)}
                           </div>
@@ -191,6 +212,13 @@ export function AdsTable({ ads, loading, onAdSelect }: AdsTableProps) {
                           <div className="text-xs text-muted-foreground max-w-xs truncate">
                             {ad.violation_types_detected}
                           </div>
+                          {ad.search_term_used && (
+                            <div className="mt-1">
+                              <Badge variant="outline" className="text-xs">
+                                Search: {ad.search_term_used}
+                              </Badge>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <Badge variant="outline" className="text-low">
@@ -200,6 +228,9 @@ export function AdsTable({ ads, loading, onAdSelect }: AdsTableProps) {
                     </td>
                     <td className="p-4 align-middle text-sm">
                       {formatDate(ad.violation_detected_date)}
+                    </td>
+                    <td className="p-4 align-middle text-sm">
+                      {formatDate(ad.data_collection_date)}
                     </td>
                     <td className="p-4 align-middle">
                       <div className="flex items-center gap-2">
@@ -211,14 +242,16 @@ export function AdsTable({ ads, loading, onAdSelect }: AdsTableProps) {
                             onAdSelect(ad.ad_archive_id)
                           }}
                           className="h-8 px-2"
+                          title="View Details"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={(e) => openFacebookAd(ad.facebook_ads_library_url, e)}
+                          onClick={(e) => openFacebookAd(ad.ad_archive_id, e)}
                           className="h-8 px-2"
+                          title="View on Facebook"
                         >
                           <ExternalLink className="h-4 w-4" />
                         </Button>
@@ -233,7 +266,7 @@ export function AdsTable({ ads, loading, onAdSelect }: AdsTableProps) {
           {ads.length === 0 && (
             <div className="flex items-center justify-center h-32 text-muted-foreground">
               No ads found matching your criteria
-            </div>
+            </div> 
           )}
         </div>
       </CardContent>
