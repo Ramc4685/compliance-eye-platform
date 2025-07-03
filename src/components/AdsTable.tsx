@@ -30,7 +30,7 @@ interface Ad {
   data_collection_date?: string
   primary_image_url?: string
   search_term_used?: string
-  created_at: string
+  last_updated: string
 }
 
 interface AdsTableProps {

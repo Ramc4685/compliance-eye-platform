@@ -23,14 +23,21 @@ interface Ad {
   page_name: string
   ad_title: string
   ad_body_text: string
+  ad_caption?: string
+  cta_text?: string
   compliance_score: number
   risk_level: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'CLEAR'
   violation_types_detected: string | null
   is_flagged: boolean
-  facebook_ads_library_url: string
+  facebook_ads_library_url?: string
+  page_profile_uri?: string
+  video_hd_url?: string
+  video_preview_image_url?: string
   violation_detected_date: string | null
-  primary_image_url: string
-  created_at: string
+  data_collection_date?: string
+  primary_image_url?: string
+  search_term_used?: string
+  last_updated: string
 }
 
 const Index = () => {
