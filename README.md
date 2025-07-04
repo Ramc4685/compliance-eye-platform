@@ -1,73 +1,77 @@
-# Welcome to your Lovable project
+# Facebook Ads Compliance Dashboard
 
-## Project info
+A comprehensive dashboard for monitoring and analyzing Facebook ads for compliance with insurance regulations. This tool helps identify potential violations, track risk levels, and ensure regulatory compliance across ad campaigns.
 
-**URL**: https://lovable.dev/projects/185ff949-a66d-43a4-816c-d73b639c2e05
+## Features
 
-## How can I edit this code?
+- **Real-time Metrics Dashboard** - View key compliance metrics at a glance
+- **Ad Monitoring** - Detailed view of all ads with filtering and search capabilities
+- **Risk Scoring** - Automated risk assessment for each ad
+- **Violation Detection** - Identify potential compliance violations automatically
+- **Direct Links** - Quick access to Facebook Ad Library for each ad
 
-There are several ways of editing your application.
+## Overview
 
-**Use Lovable**
+This dashboard provides a user-friendly interface for compliance officers to monitor and review Facebook ads at scale. It connects to a pre-configured Supabase backend for data storage and retrieval.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/185ff949-a66d-43a4-816c-d73b639c2e05) and start prompting.
+## Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js (v16 or later)
+- npm or yarn
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/compliance-eye-platform.git
+   cd compliance-eye-platform
+   ```
 
-Follow these steps:
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+4. Open [http://localhost:8080](http://localhost:8080) in your browser to view the application.
 
-# Step 3: Install the necessary dependencies.
-npm i
+## Available Scripts
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+- `npm run dev` - Start the development server
+- `npm run build` - Build the application for production
+- `npm run preview` - Preview the production build locally
+- `npm run lint` - Run ESLint to check code quality
 
-**Edit a file directly in GitHub**
+## Project Structure
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- `/src` - Source code
+  - `/components` - Reusable React components
+  - `/lib` - Utility functions and configurations
+  - `/pages` - Page components
+  - `/integrations` - Third-party service integrations (e.g., Supabase)
 
-**Use GitHub Codespaces**
+## Screenshots
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Main Dashboard
+![Dashboard Screenshot](./docs/dashboard-screenshot.png)
+*The main dashboard interface showing compliance metrics and ad monitoring features.*
 
-## What technologies are used for this project?
+### Ad Detail View
+![Ad Detail View](./docs/pop-up-1.png)
+*Detailed view of individual ad information with compliance status and violation details.*
 
-This project is built with:
+### Risk Analysis
+![Risk Analysis](./docs/pop-up-2.png)
+*Advanced risk analysis breakdown showing specific compliance issues detected.*
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## License
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/185ff949-a66d-43a4-816c-d73b639c2e05) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

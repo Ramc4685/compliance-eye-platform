@@ -106,18 +106,36 @@ export const mockBrokers = [
 // Real Supabase API functions
 export const getDashboardMetrics = async () => {
   try {
+    // Get total count separately to handle the 1000 row limit
+    const { count: totalCount, error: countError } = await supabase
+      .from('ads')
+      .select('*', { count: 'exact', head: true })
+    
+    if (countError) throw countError
+    
+    // Get sample of ads for metrics calculations
     const { data: ads, error } = await supabase
       .from('ads')
       .select('compliance_score, is_flagged, risk_level')
+      .limit(1000) // Explicitly set limit to make it clear
     
     if (error) throw error
     
-    const totalAds = ads?.length || 0
-    const flaggedCount = ads?.filter(ad => ad.is_flagged).length || 0
-    const avgScore = totalAds > 0 
-      ? Math.round((ads.reduce((sum, ad) => sum + (ad.compliance_score || 0), 0) / totalAds) * 10) / 10
+    const totalAds = totalCount || 0
+    const sampleSize = ads?.length || 0
+    
+    // Calculate metrics based on the sample
+    const flaggedCount = sampleSize > 0
+      ? Math.round((ads.filter(ad => ad.is_flagged).length / sampleSize) * totalAds)
       : 0
-    const criticalCount = ads?.filter(ad => ad.risk_level === 'CRITICAL').length || 0
+      
+    const avgScore = sampleSize > 0 
+      ? Math.round((ads.reduce((sum, ad) => sum + (ad.compliance_score || 0), 0) / sampleSize) * 10) / 10
+      : 0
+      
+    const criticalCount = sampleSize > 0
+      ? Math.round((ads.filter(ad => ad.risk_level === 'CRITICAL').length / sampleSize) * totalAds)
+      : 0
     
     return {
       totalAds,
@@ -145,7 +163,44 @@ interface SearchFilters {
 
 export const searchAds = async (searchTerm = '', filters: SearchFilters = {}, page = 0, limit = 1000) => {
   try {
-    let query = supabase
+    // First get the count of all matching records
+    let countQuery = supabase
+      .from('ads')
+      .select('*', { count: 'exact', head: true })
+    
+    // Text search across key fields
+    if (searchTerm) {
+      countQuery = countQuery.or(`
+        page_name.ilike.%${searchTerm}%,
+        ad_title.ilike.%${searchTerm}%,
+        violation_types_detected.ilike.%${searchTerm}%
+      `)
+    }
+    
+    // Risk level filter
+    if (filters.riskLevels?.length > 0) {
+      countQuery = countQuery.in('risk_level', filters.riskLevels)
+    }
+    
+    // Score range filter
+    if (filters.minScore !== undefined) {
+      countQuery = countQuery.gte('compliance_score', filters.minScore)
+    }
+    if (filters.maxScore !== undefined) {
+      countQuery = countQuery.lte('compliance_score', filters.maxScore)
+    }
+    
+    // Only flagged ads filter
+    if (filters.flaggedOnly) {
+      countQuery = countQuery.eq('is_flagged', true)
+    }
+    
+    const { count: totalCount, error: countError } = await countQuery
+    
+    if (countError) throw countError
+    
+    // Now get the actual data for the current page
+    let dataQuery = supabase
       .from('ads')
       .select(`
         ad_archive_id,
@@ -161,45 +216,45 @@ export const searchAds = async (searchTerm = '', filters: SearchFilters = {}, pa
         is_flagged,
         linked_broker_npn,
         data_collection_date,
+        search_term_used,
         last_updated
       `)
     
-    // Text search across key fields
+    // Apply the same filters to the data query
     if (searchTerm) {
-      query = query.or(`
+      dataQuery = dataQuery.or(`
         page_name.ilike.%${searchTerm}%,
         ad_title.ilike.%${searchTerm}%,
         violation_types_detected.ilike.%${searchTerm}%
       `)
     }
     
-    // Risk level filter
     if (filters.riskLevels?.length > 0) {
-      query = query.in('risk_level', filters.riskLevels)
+      dataQuery = dataQuery.in('risk_level', filters.riskLevels)
     }
     
-    // Score range filter
     if (filters.minScore !== undefined) {
-      query = query.gte('compliance_score', filters.minScore)
+      dataQuery = dataQuery.gte('compliance_score', filters.minScore)
     }
     if (filters.maxScore !== undefined) {
-      query = query.lte('compliance_score', filters.maxScore)
+      dataQuery = dataQuery.lte('compliance_score', filters.maxScore)
     }
     
-    // Only flagged ads filter
     if (filters.flaggedOnly) {
-      query = query.eq('is_flagged', true)
+      dataQuery = dataQuery.eq('is_flagged', true)
     }
     
-    const { data, error, count } = await query
+    const { data, error: dataError } = await dataQuery
       .order('compliance_score', { ascending: false })
       .range(page * limit, (page + 1) * limit - 1)
     
-    if (error) throw error
+    if (dataError) throw dataError
+    
+    console.log(`Found ${totalCount} total ads, showing page ${page + 1} with ${data?.length || 0} items`)
     
     return {
       data: data || [],
-      totalCount: count || 0
+      totalCount: totalCount || 0
     }
   } catch (error) {
     console.error('Error searching ads:', error)

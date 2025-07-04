@@ -87,7 +87,9 @@ const Index = () => {
   const searchAdsData = async () => {
     setSearchLoading(true)
     try {
+      console.log('Searching ads with:', { searchTerm, filters, currentPage, pageSize })
       const { data, totalCount: count } = await searchAds(searchTerm, filters, currentPage, pageSize)
+      console.log('Search results:', { count, dataLength: data?.length, firstItem: data?.[0] })
       setAds(data as Ad[])
       setTotalCount(count)
     } catch (error) {
@@ -164,7 +166,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricsCard
               title="Total Ads Monitored"
-              value={loading ? "..." : totalCount.toLocaleString()}
+              value={loading ? "..." : metrics.totalAds.toLocaleString()}
               description="Facebook health insurance ads"
               icon={Activity}
               variant="default"
